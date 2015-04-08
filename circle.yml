@@ -1,0 +1,30 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  cache_directories:
+    - ~/.viadeo # cache viadeo scripts
+    - ~/.local  # cache pip programs 
+  pre:
+    # setup shared scripts
+    # provision required dependency for s3 upload
+
+  override:
+    - sudo apt-get install devscripts equivs # Install needed packages
+    - pip install s3peat
+    - pip uninstall -y boto
+    - pip install -U gsutil
+
+deployment:
+  hub:
+    branch: master
+    commands:
+      - git clone https://github.com/spotify/dh-virtualenv.git       # Clone Git repository
+      - cd dh-virtualenv                                             # Move into the repository
+      - sudo mk-build-deps -ri                                       # This will install build dependencies
+      - sudo dpkg-buildpackage -us -uc -b 
+      - mkdir target 
+      - mv ../*.deb target
+      - mv ../*.changes target
+      - s3peat -b viadeo-build-artifacts ./target
